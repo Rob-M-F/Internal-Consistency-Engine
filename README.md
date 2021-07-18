@@ -19,9 +19,10 @@ Working directory for Internal Consistency Engine Development.
 
 ### Goals
 * Docker Container automated setup and launch
-	* Downloads Git Repository
-	* Finds ENVIRONMENT file and acts on the included instructions
-		* Finishes with launching the application
+	* Loads and runs /app/app.py
+	* ~~Downloads Git Repository~~
+	* ~~Finds ENVIRONMENT file and acts on the included instructions~~
+		* ~~Finishes with launching the application~~
 * Working Secure Authentication
 	* Allows user login over OAuth
 	* Maintains tokens for repeated access
