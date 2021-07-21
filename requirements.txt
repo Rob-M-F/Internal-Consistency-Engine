@@ -1,0 +1,12 @@
+# Rest API Framework
+fastapi
+uvicorn
+
+# Data Modeling and validation
+pydantic
+email-validator
+
+# Async MongoDB Connection
+motor
+
+# Authentication
