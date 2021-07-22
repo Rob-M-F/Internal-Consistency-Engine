@@ -10,3 +10,10 @@ email-validator
 motor
 
 # Authentication
+python-jose[cryptography]
+passlib
+python-multipart
+bcrypt
+
+# Secure data store
+keyring
