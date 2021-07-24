@@ -1,4 +1,5 @@
 # FROM FastAPI Security Tutorial
+from helper.config_helper import ConfigHelper
 from helper.keyring_helper import KeyringHelper
 from helper.database_helper import DatabaseHelper
 
@@ -13,17 +14,19 @@ from passlib.context import CryptContext
 
 from pydantic import BaseModel
 
+
 # MAGIC VALUES
-SERVICE_NAME = "COHERENCY_ENGINE"   # Service Name used by the OS Keyring
-SECRET_KEY_FORMAT = "HEX"           # Format used for the FastAPI Secret Key
-SECRET_KEY_LENGTH = 32              # Length used for the FastAPI Secret Key
-ENCRYPTION_ALGORITHM = "HS256"      # Algorithm CryptContext will use
-ACCESS_TOKEN_EXPIRE_MINUTES = 30    # Time to Live for Access Tokens
+magic_values = ConfigHelper.get_magic_values()
 
 # RETRIEVE THE SECRET KEY, GENERATE A NEW ONE IF IT IS ABSENT
-if (SECRET_KEY := KeyringHelper.get_keyring_data(data_field="SECRET_KEY", service_id=SERVICE_NAME)) is None:
-    SECRET_KEY = KeyringHelper.generate_secret(secret_type=SECRET_KEY_FORMAT, length=SECRET_KEY_LENGTH)
-    KeyringHelper.set_keyring_data(data_field="SECRET_KEY", service_id=SERVICE_NAME, password=SECRET_KEY)
+if (jwt_secret_key := KeyringHelper.get_keyring_data(
+        data_field="SECRET_KEY",
+        service_id=magic_values["SERVICE_NAME"])) is None:
+    jwt_secret_key = KeyringHelper.generate_secret(
+        secret_type=magic_values["SECRET_KEY_FORMAT"],
+        length=magic_values["SECRET_KEY_LENGTH"])
+    KeyringHelper.set_keyring_data(
+        data_field="SECRET_KEY", service_id=magic_values["SERVICE_NAME"], password=jwt_secret_key)
 
 fake_users_db = {
     "johndoe": {
@@ -93,7 +96,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ENCRYPTION_ALGORITHM)
+    encoded_jwt = jwt.encode(to_encode, jwt_secret_key, algorithm=magic_values["ENCRYPTION_ALGORITHM"])
     return encoded_jwt
 
 
@@ -104,7 +107,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ENCRYPTION_ALGORITHM])
+        payload = jwt.decode(token, jwt_secret_key, algorithms=magic_values["ENCRYPTION_ALGORITHM"])
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
@@ -132,7 +135,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=magic_values["ACCESS_TOKEN_EXPIRE_MINUTES"])
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
