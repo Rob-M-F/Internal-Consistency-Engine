@@ -16,7 +16,7 @@ from pydantic import BaseModel
 
 
 # MAGIC VALUES
-magic_values = ConfigHelper.get_magic_values()
+magic_values = ConfigHelper.get_fast_api_magic_values()
 
 # RETRIEVE THE SECRET KEY, GENERATE A NEW ONE IF IT IS ABSENT
 if (jwt_secret_key := KeyringHelper.get_keyring_data(
