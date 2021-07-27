@@ -36,3 +36,10 @@ Working directory for Internal Consistency Engine Development.
 	* Responses correctly report on actions taken
 	* Error messages don't leak unauthorized information
 	* Logs don't leak unauthorized information
+
+### Application Bootstrap Process
+* Application loads and checks /config/environment.json
+	* If /config/environment.json does not exist, it creates all of the blank configuration files.
+	* If /config/environment.json does exist, checks the contents
+		* If /config/environment.json contains the key {"CONFIGURED": False}, check the other configurations against the default values.
+		* Otherwise, continue bootup using the Configured values.
