@@ -39,7 +39,6 @@ Working directory for Internal Consistency Engine Development.
 
 ### Application Bootstrap Process
 * Application loads and checks /config/environment.json
-	* If /config/environment.json does not exist, it creates all of the blank configuration files.
-	* If /config/environment.json does exist, checks the contents
-		* If /config/environment.json contains the key {"CONFIGURED": False}, check the other configurations against the default values.
-		* Otherwise, continue bootup using the Configured values.
+	* If /config/environment.json does not exist, it creates the invalid default configuration files.
+	* If /config/environment.json does exist, it checks for a valid SERVICE_NAME
+	* If /config/environment.json contains a key named SERVICE_NAME with a non-empty value, assumes all other keys in the file are new or updated configurations and stores them.

@@ -1,33 +1,69 @@
 from pathlib import Path
+from keyring_helper import KeyringHelper
 import json
+from time import sleep
 
 
 class ConfigHelper:
+    ENVIRONMENT_CONFIG_PATH = Path("../configs/environment.json")    # Environment config file name
+    DEFAULT_SERVICE_NAME = ""
+
     @staticmethod
     def configuration_bootstrap(path=None):
         environment_default = ConfigHelper.get_environment_magic_values()
-        # Test whether the configuration files retain their default values
-        # If so, log the error to the system log then wait for 1 minute before checking again
-        # After 4 hours of failures to update the configs, return no configurations and stop
-        # Once a valid configuration is available, check whether it represents a change from existing
-        # If configurations are valid and changed, update the stored configuration, then recheck.
-        # If configurations are valid and unchanged, load the configurations and return.
+        if path is None:
+            path = ConfigHelper.ENVIRONMENT_CONFIG_PATH
+        print("Texting path existence: {path} - {existence}".format(path=path, existence=Path(path).exists()))
+        if not Path(path).exists():
+            ConfigHelper.create_environment_config()
+        while (configuration := ConfigHelper.get_environment_config())["SERVICE_NAME"] == "":
+            print("Waiting for valid configuration at {path}".format(path=path))
+            sleep(3)
+        basic_config = {"SERVICE_NAME": configuration.pop("SERVICE_NAME")}
+        for config in configuration:
+            KeyringHelper.set_keyring_data(
+                data_field=config,
+                service_id=basic_config["SERVICE_NAME"],
+                password=configuration[config])
+        ConfigHelper.set_environment_config(path=path, config=basic_config)
+        return ConfigHelper.get_environment_values(service_name=basic_config["SERVICE_NAME"])
+
+    @staticmethod
+    def get_environment_values(service_name):
+        key_list = ConfigHelper.get_environment_magic_values().keys()
+        return {key: KeyringHelper.get_keyring_data(data_field=key, service_id=service_name) for key in key_list}
 
     @staticmethod
     def get_environment_magic_values():
         return {
-            "ENVIRONMENT_CONFIG": Path("../configs/environment.json"),   # Environment config file name
-            "CONFIGURED": False
+            "SECRET_KEY_FORMAT": "HEX",                                   # Format used for the FastAPI Secret Key
+            "SECRET_KEY_LENGTH": 32,                                      # Length used for the FastAPI Secret Key
+            "ENCRYPTION_ALGORITHM": "HS256",                              # Algorithm JWT Encode will use
+            "ACCESS_TOKEN_EXPIRE_MINUTES": 30,                            # Time to Live for Access Tokens in minutes
+            "DATABASE_PROTOCOL": "mongodb",
+            "DATABASE_USER": "DEMO",
+            "DATABASE_PASSWORD": "DEMO",
+            "DATABASE_HOST": "127.0.0.1",
+            "DATABASE_PORT": "27017",
+            "DATABASE_NAME": "COHERENCY",
+            "CONNECTION_URI": "{DATABASE_PROTOCOL}://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:" +
+                              "{DATABASE_PORT}/{DATABASE_NAME}?retryWrites=true&w=majority"
         }
 
     @staticmethod
     def create_environment_config(path=None):
-        magic_values = ConfigHelper.get_environment_magic_values()
-        path = magic_values["FAST_API_CONFIG"] if path is None else path
-        del magic_values["FAST_API_CONFIG"]
+        ConfigHelper.set_environment_config(path=path)
+
+    @staticmethod
+    def set_environment_config(path=None, config=None):
+        if config is None:
+            config = ConfigHelper.get_environment_magic_values()
+            config["SERVICE_NAME"] = ""
+        if path is None:
+            path = ConfigHelper.ENVIRONMENT_CONFIG_PATH
         try:
             with open(path, 'w') as f:
-                json.dump(obj=magic_values, fp=f)
+                json.dump(obj=config, fp=f)
         except IOError as e:
             print(e)
 
@@ -35,88 +71,7 @@ class ConfigHelper:
     def get_environment_config(path=None):
         magic_values = ConfigHelper.get_environment_magic_values()
         if path is None:
-            path = magic_values["ENVIRONMENT_CONFIG"]
-        try:
-            with open(path, 'r') as f:
-                return json.load(f)
-        except IOError as e:
-            print(e)
-
-    @staticmethod
-    def get_fast_api_magic_values():
-        return {
-            "FAST_API_CONFIG": Path("../configs/fast_api_config.json"),   # FastAPI config file name
-            "SERVICE_NAME": "COHERENCY_ENGINE",                           # Service Name used by the OS Keyring
-            "SECRET_KEY_FORMAT": "HEX",                                   # Format used for the FastAPI Secret Key
-            "SECRET_KEY_LENGTH": 32,                                      # Length used for the FastAPI Secret Key
-            "ENCRYPTION_ALGORITHM": "HS256",                              # Algorithm JWT Encode will use
-            "ACCESS_TOKEN_EXPIRE_MINUTES": 30,                            # Time to Live for Access Tokens in minutes
-        }
-
-    @staticmethod
-    def set_fast_api_config(path=None):
-        magic_values = ConfigHelper.get_fast_api_magic_values()
-        if not Path.is_file(path := (magic_values["FAST_API_CONFIG"] if path is None else path)):
-            ConfigHelper.create_fast_api_config(path=path)
-
-    @staticmethod
-    def get_fast_api_config(path=None):
-        magic_values = ConfigHelper.get_fast_api_magic_values()
-        if path is None:
-            path = magic_values["FAST_API_CONFIG"]
-        try:
-            with open(path, 'r') as f:
-                return json.load(f)
-        except IOError as e:
-            print(e)
-
-    @staticmethod
-    def create_fast_api_config(path=None):
-        magic_values = ConfigHelper.get_fast_api_magic_values()
-        path = magic_values["FAST_API_CONFIG"] if path is None else path
-        del magic_values["FAST_API_CONFIG"]
-        try:
-            with open(path, 'w') as f:
-                json.dump(obj=magic_values, fp=f)
-        except IOError as e:
-            print(e)
-
-    @staticmethod
-    def get_database_magic_values():
-        return {
-            "DATABASE_CONFIG": Path("../configs/database_config.json"),   # Database config file name
-            "PROTOCOL": "mongodb",
-            "USER": "DEMO",
-            "PASSWORD": "DEMO",
-            "HOST": "127.0.0.1",
-            "PORT": "27017",
-            "DATABASE": "COHERENCY",
-            "ADDENDUM": "?retryWrites=true&w=majority",
-            "CONNECT": "{PROTOCOL}://{USER}:{PASSWORD}@{HOST}:{PORT}/{DATABASE}{ADDENDUM}"
-        }
-
-    @staticmethod
-    def set_database_config(path=None):
-        magic_values = ConfigHelper.get_database_magic_values()
-        if not Path.is_file(path := (magic_values["DATABASE_CONFIG"] if path is None else path)):
-            ConfigHelper.create_database_config(path=path)
-
-    @staticmethod
-    def create_database_config(path=None):
-        magic_values = ConfigHelper.get_database_magic_values()
-        path = magic_values["DATABASE_CONFIG"] if path is None else path
-        del magic_values["DATABASE_CONFIG"]
-        try:
-            with open(path, 'w') as f:
-                json.dump(obj=magic_values, fp=f)
-        except IOError as e:
-            print(e)
-
-    @staticmethod
-    def get_database_config(path=None):
-        magic_values = ConfigHelper.get_database_magic_values()
-        if path is None:
-            path = magic_values["DATABASE_CONFIG"]
+            path = ConfigHelper.ENVIRONMENT_CONFIG_PATH
         try:
             with open(path, 'r') as f:
                 return json.load(f)
@@ -125,5 +80,4 @@ class ConfigHelper:
 
 
 if __name__ == "__main__":
-    ConfigHelper.create_fast_api_config()
-    ConfigHelper.create_database_config()
+    print(ConfigHelper.configuration_bootstrap())
