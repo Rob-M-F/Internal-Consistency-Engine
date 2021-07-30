@@ -1,10 +1,14 @@
 # Internal-Consistency-Engine
-Working directory for Internal Consistency Engine Development.
+Internal Consistency Engine Development.
 
 ## Structural Plan
-* Provide a REST API for interaction with the engine.
-* Organize content into Page-Cell structure
-* Separate content based on Universe Context within Multiverse Context
+* Bootstrap process loads configurations from config files and secure repository
+  * Validates configurations to ensure that startup can be successful
+  * Loads the appropriate parts based on which portions of the configuration are valid
+  * Provides an interface for correcting improper configurations
+* Application process provides a REST API
+  * Organizes content into Page-Cell structure
+  * Separate content based on Universe Context within Multiverse Context
 * Allow users to have multiple, distinct frames of reference for accessing content.
 * Control access to content on a per-cell, per frame of reference basis.
 
