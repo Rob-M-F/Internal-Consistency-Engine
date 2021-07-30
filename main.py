@@ -13,6 +13,14 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from pydantic import BaseModel
+from bootstraps.mongo_bootstrap import MongoBootstrapper
+
+config = ConfigHelper.get_environment_config()
+result, result_msg = MongoBootstrapper.test_connection_string(config)
+if result:
+    pass # run normally
+else:
+    pass # run bootstrap process
 
 
 # MAGIC VALUES
