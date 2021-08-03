@@ -1,4 +1,7 @@
-# FROM FastAPI Security Tutorial
+from api.configuration_environment import ConfigurationEnvironment
+
+import argparse
+
 from helper.config_helper import ConfigHelper
 from helper.keyring_helper import KeyringHelper
 from helper.database_helper import DatabaseHelper
@@ -15,9 +18,12 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 from bootstraps.mongo_bootstrap import MongoBootstrapper
 
-config = ConfigHelper.get_environment_config()
+"""
 result, result_msg = MongoBootstrapper.test_connection_string(config)
 if result:
+    for item in result:
+        KeyringHelper.set_keyring_data(data_field=item, service_id=config["SERVICE_NAME"], password=result[item])
+
     pass # run normally
 else:
     pass # run bootstrap process
@@ -164,3 +170,30 @@ async def read_own_items(current_user: User = Depends(get_current_active_user)):
 #@app.get("/hash/")
 #async def get_hash(password):
 #    return pwd_context.hash(password)
+"""
+
+
+class CoherencyEngine:
+    def __init__(self, configs=None):
+        if configs is None:
+            self.__config = ConfigHelper.get_environment_config()
+
+    def __parse_arguments(self, args):
+        pass
+
+    def setup_database(self):
+        MongoBootstrapper.test_connection_string()
+
+    def start_environment(self):
+        if self.__api_engine is None:
+            self.__api_engine = FastAPI
+        if self.__database_connection is None:
+            ConfigurationEnvironment.
+
+
+    def validate(self):
+        pass
+
+    def start(self):
+        pass
+
