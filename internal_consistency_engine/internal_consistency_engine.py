@@ -1,5 +1,5 @@
 from api.configuration_environment import ConfigurationEnvironment
-
+from database_engine import MongoEngine
 import argparse
 
 from helper.config_helper import ConfigHelper
@@ -175,25 +175,37 @@ async def read_own_items(current_user: User = Depends(get_current_active_user)):
 
 class CoherencyEngine:
     def __init__(self, configs=None):
-        if configs is None:
-            self.__config = ConfigHelper.get_environment_config()
+        self.__config = {} if configs is None else configs
 
-    def __parse_arguments(self, args):
-        pass
+        # Load Environment configuration from Environment Path location
+        if "ENVIRONMENT_PATH" in self.__config:
+            self.__config.update(ConfigHelper.get_environment_config(path=configs["ENVIRONMENT_PATH"]))
+        else:
+            self.__config.update(ConfigHelper.get_environment_config())
 
-    def setup_database(self):
-        MongoBootstrapper.test_connection_string()
+        self.__setup_database()
+        self.__setup_api()
 
-    def start_environment(self):
-        if self.__api_engine is None:
-            self.__api_engine = FastAPI
-        if self.__database_connection is None:
-            ConfigurationEnvironment.
+    def __setup_database_engine(self, engine='mongodb'):
+        if engine == 'mongodb':
+            self.__data_engine = MongoEngine
 
+    def __setup_database(self):
+        self.__database = self.__data_engine(self.__config["database_uri"], self.__config["database_data"])
 
-    def validate(self):
-        pass
+    def __setup_api(self):
+        self.__api = FastAPI
+
+    def update_database(self, uri=None, values=None):
+        uri = self.__config["database_uri"] if uri is None else uri
+        values = self.__config["database_data"] if values is None else values
+        new_database = self.__data_engine(uri=uri, values=values)
 
     def start(self):
-        pass
+        if self.__database.validate():
+            pass # Load Operation API
+        else:
+            pass # Load Configuration API
 
+    def validate(self):
+        return self.__database.validate()

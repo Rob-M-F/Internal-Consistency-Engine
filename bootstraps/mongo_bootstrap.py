@@ -14,7 +14,7 @@ class MongoBootstrapper:
     uri_template = "{PROTOCOL}://{USERNAME}:{PASSWORD}@{HOSTNAME}:{HOST_PORT}/{DATABASE}"
 
     @staticmethod
-    def test_connection_string(uri=None, data=None):
+    def test_connection_string(uri=None, data=None, msg=False):
         if uri is None:
             uri = MongoBootstrapper.uri_template
         if data is None:
@@ -26,4 +26,7 @@ class MongoBootstrapper:
         except ConnectionError as e:
             result = False
             result_msg = e.strerror
-        return result, result_msg
+        if msg:
+            return result_msg
+        else:
+            return result
